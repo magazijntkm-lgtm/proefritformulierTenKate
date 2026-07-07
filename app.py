@@ -209,7 +209,9 @@ if postcode and huisnummer and huidige_combinatie != st.session_state.last_looku
     if gevonden_straat and gevonden_woonplaats:
         st.session_state.straat = gevonden_straat
         st.session_state.woonplaats = gevonden_woonplaats
+    
     st.session_state.last_lookup = huidige_combinatie
+    st.rerun() # <-- Zorgt ervoor dat Streamlit de nieuwe data direct keihard registreert
 
 straat = st.text_input("Straat", key="straat", autocomplete="address-line1")
 woonplaats = st.text_input("Woonplaats", key="woonplaats", autocomplete="address-level2")
@@ -242,8 +244,7 @@ st.header("3. Voorwaarden & Akkoord")
 
 with st.expander("📄 Klik hier om de Algemene Voorwaarden te lezen"):
     st.markdown("""
-    **Proefrit:**  
-    De gebruiker krijgt de motorfiets in bruikleen voor de genoemde periode. De motorfiets blijft eigendom van Ten Kate Motoren. De gebruiker dient de motorfiets uiterlijk op hierboven genoemde datum en tijdstip einde proefrit bij Ten Kate Motoren ingeleverd te hebben.  
+    **Proefrit:** De gebruiker krijgt de motorfiets in bruikleen voor de genoemde periode. De motorfiets blijft eigendom van Ten Kate Motoren. De gebruiker dient de motorfiets uiterlijk op hierboven genoemde datum en tijdstip einde proefrit bij Ten Kate Motoren ingeleverd te hebben.  
     Het is niet toegestaan:
     - Om welke reden dan ook, deze termijn te verlengen zonder schriftelijke toestemming van Ten Kate Motoren.
     - Om buiten een straal van 35km, vanaf Nieuwleusen te rijden.
@@ -252,17 +253,13 @@ with st.expander("📄 Klik hier om de Algemene Voorwaarden te lezen"):
     
     *Per heel uur dat de motor te laat is ingeleverd, kan Ten Kate Motoren € 50,- in rekening brengen.*
 
-    **FH Kenteken:**  
-    Bij het rijden met een FH kenteken dient de gebruiker zich, in verband met de wettelijke regeling daarvoor, te beperken tot het testen van de motor. Dit betekent o.a. dat het verboden is de motor op de openbare weg te parkeren of te gebruiken voor vervoer van personen/goederen. De FH platen zijn niet geldig in het buitenland.
+    **FH Kenteken:** Bij het rijden met een FH kenteken dient de gebruiker zich, in verband met de wettelijke regeling daarvoor, te beperken tot het testen van de motor. Dit betekent o.a. dat het verboden is de motor op de openbare weg te parkeren of te gebruiken voor vervoer van personen/goederen. De FH platen zijn niet geldig in het buitenland.
 
-    **Kentekendocumenten:**  
-    De gebruiker dient alle bij aanvang van de proefrit overhandigde documenten bij einde proefrit te retourneren aan Ten Kate Motoren.
+    **Kentekendocumenten:** De gebruiker dient alle bij aanvang van de proefrit overhandigde documenten bij einde proefrit te retourneren aan Ten Kate Motoren.
 
-    **Vrijwaring:**  
-    De gebruiker vrijwaart het bedrijf voor alle schade ontstaan ten gevolge van of tijdens het gebruik van de motor, zoals onder meer ten gevolge van boetes, overtredingen en/of inbeslagname en/of verbeurdverklaring van de motor, evenals voor aanspraken van derden verband houdend met het gebruik van de motor.
+    **Vrijwaring:** De gebruiker vrijwaart het bedrijf voor alle schade ontstaan ten gevolge van of tijdens het gebruik van de motor, zoals onder meer ten gevolge van boetes, overtredingen en/of inbeslagname en/of verbeurdverklaring van de motor, evenals voor aanspraken van derden verband houdend met het gebruik van de motor.
 
-    **Verzekering:**  
-    De motor is door Ten Kate Motoren verzekerd met: **Een WA + Casco verzekering met een eigen risico van € 750,-**
+    **Verzekering:** De motor is door Ten Kate Motoren verzekerd met: **Een WA + Casco verzekering met een eigen risico van € 750,-**
     """)
 
 akkoord = st.checkbox("Ik ga akkoord met de algemene voorwaarden.")
@@ -281,11 +278,24 @@ canvas_result = st_canvas(
 
 # 4. Verzenden
 if st.button("Formulier Verzenden", type="primary", width="stretch" if st.__version__ >= '1.30' else None):
-    # Validatie
-    if not naam or not postcode or not huisnummer or not straat or not woonplaats or not email or not telefoon:
-        st.error("Vul a.u.b. alle persoons- en adresgegevens in.")
+    
+    # OPGESPLITSTE VALIDATIE: Zo weet je exact wélk veld Streamlit als missend ziet
+    if not naam:
+        st.error("Vul a.u.b. je volledige naam in.")
     elif geboortedatum is None:
         st.error("Vul a.u.b. je geboortedatum in.")
+    elif not postcode:
+        st.error("Vul a.u.b. je postcode in.")
+    elif not huisnummer:
+        st.error("Vul a.u.b. je huisnummer in.")
+    elif not straat:
+        st.error("Straatnaam ontbreekt. Controleer of de postcode en het huisnummer kloppen.")
+    elif not woonplaats:
+        st.error("Woonplaats ontbreekt. Controleer of de postcode en het huisnummer kloppen.")
+    elif not email:
+        st.error("Vul a.u.b. je e-mailadres in (let op: klik na auto-aanvullen even buiten het veld).")
+    elif not telefoon:
+        st.error("Vul a.u.b. je telefoonnummer in (let op: klik na auto-aanvullen even buiten het veld).")
     elif not rijbewijsnummer or not rijbewijsnummer.isdigit() or len(rijbewijsnummer) != 10:
         st.error("Het rijbewijsnummer is ongeldig. Dit moet bestaan uit exact 10 cijfers (zie item 5 op je rijbewijs).")
     elif not gekozen_merk or not gekozen_motor:
@@ -317,7 +327,6 @@ if st.button("Formulier Verzenden", type="primary", width="stretch" if st.__vers
         
         if succes:
             st.balloons()
-            st.success("Formulier succesvol verzonden! De PDF is opgeslagen in de map 'pdf_formulieren'.")
+            st.success("Formulier succesvol verzonden! De PDF is opgeslagen en gemaild.")
         else:
-            # Dit toont een nette rode melding in plaats van een harde code-crash
             st.error(f"⚠️ {foutmelding}")

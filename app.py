@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import os
 import requests
+import smtplib
+from email.message import EmailMessage
 from datetime import datetime, date
 from streamlit_drawable_canvas import st_canvas
 from PIL import Image
@@ -109,6 +111,30 @@ Verzekering: De motor is door Ten Kate Motoren verzekerd met: Een WA + Casco ver
     
     pdf.output(pdf_filename)
 
+# Helper: PDF e-mailen naar de verkoop
+def stuur_email_met_pdf(pdf_filename, klant_naam):
+    msg = EmailMessage()
+    msg['Subject'] = f"Nieuwe Proefrit Aanvraag: {klant_naam}"
+    msg['From'] = st.secrets["email"]["username"]
+    msg['To'] = "verkoop@tenkatemotoren.nl"
+    msg.set_content(f"Beste Verkoop-team,\n\nEr is zojuist een nieuw proefritformulier ingevuld door {klant_naam}.\nIn de bijlage vinden jullie de door de klant ondertekende PDF.\n\nDe data is tevens toegevoegd aan de Google Sheet.\n\nGroet,\nHet Proefrit Systeem")
+
+    # Voeg de PDF toe als bijlage
+    with open(pdf_filename, 'rb') as f:
+        pdf_data = f.read()
+    
+    pdf_naam = os.path.basename(pdf_filename)
+    msg.add_attachment(pdf_data, maintype='application', subtype='pdf', filename=pdf_naam)
+
+    try:
+        # Inloggen en versturen via SMTP
+        with smtplib.SMTP_SSL(st.secrets["email"]["smtp_server"], st.secrets["email"]["port"]) as server:
+            server.login(st.secrets["email"]["username"], st.secrets["email"]["password"])
+            server.send_message(msg)
+        return True, ""
+    except Exception as e:
+        return False, f"E-mail versturen mislukt: {e}"
+
 # Data compleet verwerken en opslaan
 def save_form_data(data_dict, signature_img, klant_naam):
     # 1. Stuur data naar Google Sheets Webhook
@@ -131,6 +157,11 @@ def save_form_data(data_dict, signature_img, klant_naam):
 
     pdf_filename = f"{PDF_DIR}/Proefritformulier_{safe_name}_{timestamp}.pdf"
     genereer_pdf(data_dict, sig_filename, pdf_filename)
+    
+    # Verstuur direct de email!
+    email_succes, email_fout = stuur_email_met_pdf(pdf_filename, klant_naam)
+    if not email_succes:
+        return False, f"Data opgeslagen, maar {email_fout}"
     
     return True, ""
 

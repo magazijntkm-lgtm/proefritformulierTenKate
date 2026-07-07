@@ -12,6 +12,23 @@ from fpdf import FPDF
 # Configuratie van de webpagina
 st.set_page_config(page_title="Proefrit Aanvraag", page_icon="🏍️", layout="centered")
 
+# --- CUSTOM STYLING & LOGO ---
+if os.path.exists("logo.png"):
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image("logo.png", use_container_width=True)
+
+# Verberg het standaard Streamlit menu en footer voor een strakke 'App' look
+hide_st_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_st_style, unsafe_allow_html=True)
+# -----------------------------
+
 # Bestandslocaties & Mappen
 OPSLAG_FILE = "ingevulde_formulieren.xlsx"
 HANDTEKENING_DIR = "handtekeningen"

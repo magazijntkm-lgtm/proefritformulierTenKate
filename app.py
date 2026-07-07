@@ -194,14 +194,14 @@ st.write("Vul onderstaande gegevens in om de proefrit te starten.")
 
 # 1. Klantgegevens
 st.header("1. Persoonsgegevens")
-# Autocomplete uitgezet om autofill bugs te voorkomen
-naam = st.text_input("Volledige Naam", autocomplete="off")
+# De "new-password" hack om Chrome's agressieve autofill te slim af te zijn
+naam = st.text_input("Volledige Naam", autocomplete="new-password")
 geboortedatum = st.date_input("Geboortedatum", value=None, min_value=date(1900, 1, 1), max_value=date.today(), format="DD-MM-YYYY")
 
 st.markdown("##### Adresgegevens")
 col1, col2 = st.columns([1, 1])
-with col1: postcode = st.text_input("Postcode (bijv. 1234AB)", autocomplete="off")
-with col2: huisnummer = st.text_input("Huisnummer", autocomplete="off")
+with col1: postcode = st.text_input("Postcode (bijv. 1234AB)", autocomplete="new-password")
+with col2: huisnummer = st.text_input("Huisnummer", autocomplete="new-password")
 
 # Activeer de PDOK adreszoeker op de achtergrond
 huidige_combinatie = f"{postcode}_{huisnummer}"
@@ -213,12 +213,12 @@ if postcode and huisnummer and huidige_combinatie != st.session_state.last_looku
     st.session_state.last_lookup = huidige_combinatie
     st.rerun()
 
-straat = st.text_input("Straat", key="straat", autocomplete="off")
-woonplaats = st.text_input("Woonplaats", key="woonplaats", autocomplete="off")
+straat = st.text_input("Straat", key="straat", autocomplete="new-password")
+woonplaats = st.text_input("Woonplaats", key="woonplaats", autocomplete="new-password")
 
 st.markdown("##### Contact")
-email = st.text_input("E-mailadres", autocomplete="off")
-telefoon = st.text_input("Telefoonnummer", autocomplete="off")
+email = st.text_input("E-mailadres", autocomplete="new-password")
+telefoon = st.text_input("Telefoonnummer", autocomplete="new-password")
 
 # 1.B Rijbewijsgegevens
 st.header("🪪 Rijbewijs")
@@ -229,14 +229,14 @@ if os.path.exists("voorbeeld_rijbewijs.jpg"):
 else:
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/NLD_driving_license_2014_front.jpg/600px-NLD_driving_license_2014_front.jpg", caption="Voorbeeld: Het rijbewijsnummer staat bij nummer 5.", width="stretch" if st.__version__ >= '1.30' else None)
 
-rijbewijsnummer = st.text_input("Rijbewijsnummer (Item 5)", autocomplete="off")
+rijbewijsnummer = st.text_input("Rijbewijsnummer (Item 5)", autocomplete="new-password")
 st.markdown("---")
 
 # 2. Motorgegevens
 st.header("2. Motorgegevens")
 st.write("Vul in op welke motor je wilt proefrijden.")
-gekozen_merk = st.text_input("Merk (bijv. Yamaha, Honda)", autocomplete="off")
-gekozen_motor = st.text_input("Type / Model (bijv. MT-07, Fireblade)", autocomplete="off")
+gekozen_merk = st.text_input("Merk (bijv. Yamaha, Honda)", autocomplete="new-password")
+gekozen_motor = st.text_input("Type / Model (bijv. MT-07, Fireblade)", autocomplete="new-password")
 st.markdown("---")
 
 # 3. Voorwaarden & Handtekening
@@ -279,7 +279,7 @@ canvas_result = st_canvas(
 # 4. Verzenden
 if st.button("Formulier Verzenden", type="primary", width="stretch" if st.__version__ >= '1.30' else None):
     
-    # Validatie is weer terug!
+    # Validatie is actief
     if not naam:
         st.error("Vul a.u.b. je volledige naam in.")
     elif geboortedatum is None:

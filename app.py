@@ -194,13 +194,14 @@ st.write("Vul onderstaande gegevens in om de proefrit te starten.")
 
 # 1. Klantgegevens
 st.header("1. Persoonsgegevens")
-naam = st.text_input("Volledige Naam", autocomplete="name")
+# Autocomplete uitgezet om autofill bugs te voorkomen
+naam = st.text_input("Volledige Naam", autocomplete="off")
 geboortedatum = st.date_input("Geboortedatum", value=None, min_value=date(1900, 1, 1), max_value=date.today(), format="DD-MM-YYYY")
 
 st.markdown("##### Adresgegevens")
 col1, col2 = st.columns([1, 1])
-with col1: postcode = st.text_input("Postcode (bijv. 1234AB)", autocomplete="postal-code")
-with col2: huisnummer = st.text_input("Huisnummer")
+with col1: postcode = st.text_input("Postcode (bijv. 1234AB)", autocomplete="off")
+with col2: huisnummer = st.text_input("Huisnummer", autocomplete="off")
 
 # Activeer de PDOK adreszoeker op de achtergrond
 huidige_combinatie = f"{postcode}_{huisnummer}"
@@ -209,16 +210,15 @@ if postcode and huisnummer and huidige_combinatie != st.session_state.last_looku
     if gevonden_straat and gevonden_woonplaats:
         st.session_state.straat = gevonden_straat
         st.session_state.woonplaats = gevonden_woonplaats
-    
     st.session_state.last_lookup = huidige_combinatie
-    st.rerun() # <-- Zorgt ervoor dat Streamlit de nieuwe data direct keihard registreert
+    st.rerun()
 
-straat = st.text_input("Straat", key="straat", autocomplete="address-line1")
-woonplaats = st.text_input("Woonplaats", key="woonplaats", autocomplete="address-level2")
+straat = st.text_input("Straat", key="straat", autocomplete="off")
+woonplaats = st.text_input("Woonplaats", key="woonplaats", autocomplete="off")
 
 st.markdown("##### Contact")
-email = st.text_input("E-mailadres", autocomplete="email")
-telefoon = st.text_input("Telefoonnummer", autocomplete="tel")
+email = st.text_input("E-mailadres", autocomplete="off")
+telefoon = st.text_input("Telefoonnummer", autocomplete="off")
 
 # 1.B Rijbewijsgegevens
 st.header("🪪 Rijbewijs")
@@ -229,14 +229,14 @@ if os.path.exists("voorbeeld_rijbewijs.jpg"):
 else:
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/NLD_driving_license_2014_front.jpg/600px-NLD_driving_license_2014_front.jpg", caption="Voorbeeld: Het rijbewijsnummer staat bij nummer 5.", width="stretch" if st.__version__ >= '1.30' else None)
 
-rijbewijsnummer = st.text_input("Rijbewijsnummer (Item 5)")
+rijbewijsnummer = st.text_input("Rijbewijsnummer (Item 5)", autocomplete="off")
 st.markdown("---")
 
 # 2. Motorgegevens
 st.header("2. Motorgegevens")
 st.write("Vul in op welke motor je wilt proefrijden.")
-gekozen_merk = st.text_input("Merk (bijv. Yamaha, Honda)")
-gekozen_motor = st.text_input("Type / Model (bijv. MT-07, Fireblade)")
+gekozen_merk = st.text_input("Merk (bijv. Yamaha, Honda)", autocomplete="off")
+gekozen_motor = st.text_input("Type / Model (bijv. MT-07, Fireblade)", autocomplete="off")
 st.markdown("---")
 
 # 3. Voorwaarden & Handtekening
@@ -279,19 +279,33 @@ canvas_result = st_canvas(
 # 4. Verzenden
 if st.button("Formulier Verzenden", type="primary", width="stretch" if st.__version__ >= '1.30' else None):
     
-    # Noodoplossing: Tekstveld-validaties zijn verwijderd vanwege de browser-autofill bug.
-    # We checken alleen de elementen die Python laten crashen als ze missen.
-    
-    if geboortedatum is None:
-        st.error("Vul a.u.b. je geboortedatum in (verplicht om een systeemfout te voorkomen).")
+    # Validatie is weer terug!
+    if not naam:
+        st.error("Vul a.u.b. je volledige naam in.")
+    elif geboortedatum is None:
+        st.error("Vul a.u.b. je geboortedatum in.")
+    elif not postcode:
+        st.error("Vul a.u.b. je postcode in.")
+    elif not huisnummer:
+        st.error("Vul a.u.b. je huisnummer in.")
+    elif not straat:
+        st.error("Straatnaam ontbreekt. Controleer of de postcode en het huisnummer kloppen.")
+    elif not woonplaats:
+        st.error("Woonplaats ontbreekt. Controleer of de postcode en het huisnummer kloppen.")
+    elif not email:
+        st.error("Vul a.u.b. je e-mailadres in.")
+    elif not telefoon:
+        st.error("Vul a.u.b. je telefoonnummer in.")
+    elif not rijbewijsnummer or not rijbewijsnummer.isdigit() or len(rijbewijsnummer) != 10:
+        st.error("Het rijbewijsnummer is ongeldig. Dit moet bestaan uit exact 10 cijfers (zie item 5 op je rijbewijs).")
+    elif not gekozen_merk or not gekozen_motor:
+        st.error("Vul a.u.b. het merk en type van de motor in.")
     elif not akkoord:
         st.error("Je moet akkoord gaan met de voorwaarden om de proefrit te starten.")
     elif canvas_result.image_data is None or len(canvas_result.json_data["objects"]) == 0:
         st.error("Vergeet niet je handtekening te plaatsen.")
     else:
-        # Alles gereed! Eventuele onzichtbare autofill-waarden worden nu geaccepteerd 
-        # (Let op: ze komen dan als lege string ("") in je database/PDF terecht).
-        
+        # Alles gereed!
         form_data = {
             "Datum_Tijd": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Naam": naam,
@@ -305,14 +319,11 @@ if st.button("Formulier Verzenden", type="primary", width="stretch" if st.__vers
             "Rijbewijsnummer": rijbewijsnummer,
             "Merk": gekozen_merk,
             "Type": gekozen_motor,
-            "Kenteken": "" # Blijft netjes leeg in de Excel zodat je het zelf kan intypen
+            "Kenteken": "" 
         }
         
-        # Fallback voor het opslaan van de bestandsnaam als 'naam' door de bug leeg is
-        opslaan_naam = naam if naam else "OnbekendeKlant"
-        
         # Poging tot opslaan
-        succes, foutmelding = save_form_data(form_data, canvas_result.image_data, opslaan_naam)
+        succes, foutmelding = save_form_data(form_data, canvas_result.image_data, naam)
         
         if succes:
             st.balloons()

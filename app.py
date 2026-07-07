@@ -111,21 +111,17 @@ Verzekering: De motor is door Ten Kate Motoren verzekerd met: Een WA + Casco ver
 
 # Data compleet verwerken en opslaan
 def save_form_data(data_dict, signature_img, klant_naam):
-    # 1. Excel bijwerken in een try-except blok zodat de app NIET crasht als Excel open staat!
-    df_new = pd.DataFrame([data_dict])
+    # 1. Stuur data naar Google Sheets Webhook
+    WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzyLzZeBcycLqBSSmTy5uQ1R73jhAcfPOVssqmLwvcb6sJiSKq-bkBp-S9lXbZn-pPc/exec"
+    
     try:
-        if os.path.exists(OPSLAG_FILE):
-            df_existing = pd.read_excel(OPSLAG_FILE)
-            df_combined = pd.concat([df_existing, df_new], ignore_index=True)
-        else:
-            df_combined = df_new
-        df_combined.to_excel(OPSLAG_FILE, index=False)
-    except PermissionError:
-        return False, f"Het bestand '{OPSLAG_FILE}' staat geopend in Excel. Sluit Excel af en klik nogmaals op Verzenden!"
+        response = requests.post(WEBHOOK_URL, json=data_dict)
+        if response.status_code != 200:
+            return False, "Fout bij opslaan in de database (Google Sheets)."
     except Exception as e:
-        return False, f"Er is een onverwachte fout opgetreden bij het opslaan van de Excel: {e}"
+        return False, f"Verbindingsfout met database: {e}"
 
-    # 2. Als de Excel is gelukt, slaan we de handtekening op
+    # 2. Sla handtekening en PDF op in de cloud-server
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     safe_name = "".join([c for c in klant_naam if c.isalpha() or c.isdigit()]).rstrip()
     sig_filename = f"{HANDTEKENING_DIR}/handtekening_{safe_name}_{timestamp}.png"
@@ -133,7 +129,6 @@ def save_form_data(data_dict, signature_img, klant_naam):
     img = Image.fromarray(signature_img.astype('uint8'), 'RGBA')
     img.save(sig_filename)
 
-    # 3. Genereer de PDF
     pdf_filename = f"{PDF_DIR}/Proefritformulier_{safe_name}_{timestamp}.pdf"
     genereer_pdf(data_dict, sig_filename, pdf_filename)
     

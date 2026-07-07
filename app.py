@@ -177,12 +177,12 @@ st.write("Vul onderstaande gegevens in om de proefrit te starten.")
 
 # 1. Klantgegevens
 st.header("1. Persoonsgegevens")
-naam = st.text_input("Volledige Naam")
+naam = st.text_input("Volledige Naam", autocomplete="name")
 geboortedatum = st.date_input("Geboortedatum", value=None, min_value=date(1900, 1, 1), max_value=date.today(), format="DD-MM-YYYY")
 
 st.markdown("##### Adresgegevens")
 col1, col2 = st.columns([1, 1])
-with col1: postcode = st.text_input("Postcode (bijv. 1234AB)")
+with col1: postcode = st.text_input("Postcode (bijv. 1234AB)", autocomplete="postal-code")
 with col2: huisnummer = st.text_input("Huisnummer")
 
 # Activeer de PDOK adreszoeker op de achtergrond
@@ -194,13 +194,12 @@ if postcode and huisnummer and huidige_combinatie != st.session_state.last_looku
         st.session_state.woonplaats = gevonden_woonplaats
     st.session_state.last_lookup = huidige_combinatie
 
-straat = st.text_input("Straat", key="straat")
-woonplaats = st.text_input("Woonplaats", key="woonplaats")
+straat = st.text_input("Straat", key="straat", autocomplete="address-line1")
+woonplaats = st.text_input("Woonplaats", key="woonplaats", autocomplete="address-level2")
 
 st.markdown("##### Contact")
-email = st.text_input("E-mailadres")
-telefoon = st.text_input("Telefoonnummer")
-st.markdown("---")
+email = st.text_input("E-mailadres", autocomplete="email")
+telefoon = st.text_input("Telefoonnummer", autocomplete="tel")
 
 # 1.B Rijbewijsgegevens
 st.header("🪪 Rijbewijs")

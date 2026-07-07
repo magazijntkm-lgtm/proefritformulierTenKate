@@ -279,33 +279,19 @@ canvas_result = st_canvas(
 # 4. Verzenden
 if st.button("Formulier Verzenden", type="primary", width="stretch" if st.__version__ >= '1.30' else None):
     
-    # OPGESPLITSTE VALIDATIE: Zo weet je exact wélk veld Streamlit als missend ziet
-    if not naam:
-        st.error("Vul a.u.b. je volledige naam in.")
-    elif geboortedatum is None:
-        st.error("Vul a.u.b. je geboortedatum in.")
-    elif not postcode:
-        st.error("Vul a.u.b. je postcode in.")
-    elif not huisnummer:
-        st.error("Vul a.u.b. je huisnummer in.")
-    elif not straat:
-        st.error("Straatnaam ontbreekt. Controleer of de postcode en het huisnummer kloppen.")
-    elif not woonplaats:
-        st.error("Woonplaats ontbreekt. Controleer of de postcode en het huisnummer kloppen.")
-    elif not email:
-        st.error("Vul a.u.b. je e-mailadres in (let op: klik na auto-aanvullen even buiten het veld).")
-    elif not telefoon:
-        st.error("Vul a.u.b. je telefoonnummer in (let op: klik na auto-aanvullen even buiten het veld).")
-    elif not rijbewijsnummer or not rijbewijsnummer.isdigit() or len(rijbewijsnummer) != 10:
-        st.error("Het rijbewijsnummer is ongeldig. Dit moet bestaan uit exact 10 cijfers (zie item 5 op je rijbewijs).")
-    elif not gekozen_merk or not gekozen_motor:
-        st.error("Vul a.u.b. het merk en type van de motor in.")
+    # Noodoplossing: Tekstveld-validaties zijn verwijderd vanwege de browser-autofill bug.
+    # We checken alleen de elementen die Python laten crashen als ze missen.
+    
+    if geboortedatum is None:
+        st.error("Vul a.u.b. je geboortedatum in (verplicht om een systeemfout te voorkomen).")
     elif not akkoord:
         st.error("Je moet akkoord gaan met de voorwaarden om de proefrit te starten.")
     elif canvas_result.image_data is None or len(canvas_result.json_data["objects"]) == 0:
         st.error("Vergeet niet je handtekening te plaatsen.")
     else:
-        # Alles gereed!
+        # Alles gereed! Eventuele onzichtbare autofill-waarden worden nu geaccepteerd 
+        # (Let op: ze komen dan als lege string ("") in je database/PDF terecht).
+        
         form_data = {
             "Datum_Tijd": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Naam": naam,
@@ -322,8 +308,11 @@ if st.button("Formulier Verzenden", type="primary", width="stretch" if st.__vers
             "Kenteken": "" # Blijft netjes leeg in de Excel zodat je het zelf kan intypen
         }
         
+        # Fallback voor het opslaan van de bestandsnaam als 'naam' door de bug leeg is
+        opslaan_naam = naam if naam else "OnbekendeKlant"
+        
         # Poging tot opslaan
-        succes, foutmelding = save_form_data(form_data, canvas_result.image_data, naam)
+        succes, foutmelding = save_form_data(form_data, canvas_result.image_data, opslaan_naam)
         
         if succes:
             st.balloons()
